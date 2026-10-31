@@ -299,18 +299,19 @@ function renderOpps() {
     return;
   }
   $('oppTable').innerHTML = `<table>
-    <thead><tr><th>#</th><th>Lot</th><th class="num">Score</th><th class="num">Demandé</th><th class="num">Prix max</th><th class="num">Net réaliste</th><th class="num">ROI</th><th>Statut</th><th>Actions</th></tr></thead>
+    <thead><tr><th>#</th><th>Lot</th><th class="num">Score</th><th class="num">Demandé</th><th class="num">Prix max</th><th class="num">Net réaliste</th><th class="num">ROI</th><th>Favori Vinted</th><th>Statut</th><th>Actions</th></tr></thead>
     <tbody>${list.map(({ l, c }, i) => {
       const url = safeUrl(l.url);
       return `<tr>
-        <td>${i + 1}${i < 10 && OPEN.includes(l.status) ? ' ⭐' : ''}</td>
+        <td>${i + 1}${i < 10 && OPEN.includes(l.status) && favAdvice(c).ok ? ' ⭐' : ''}</td>
         <td>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(l.title)}</a>` : esc(l.title)}<br><small style="color:var(--muted)">${c.n} art. · ${esc(brandsOf(l))}${l.seller ? ' · ' + esc(l.seller) : ''}</small></td>
         <td class="num score">${c.score}</td>
         <td class="num">${eur(c.price)}</td>
         <td class="num ${c.price <= c.maxPrice ? 'pos' : 'neg'}">${eur(c.maxPrice)}</td>
         <td class="num ${signCls(c.real.net)}">${eur(c.real.net)}</td>
         <td class="num">${pct(c.real.roi)}</td>
-        <td><select data-status="${l.id}">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></td>
+        <td>${favCell(l, c)}</td>
+        <td><select data-status="${l.id}" style="min-width:150px">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></td>
         <td style="white-space:nowrap">
           <button class="btn small" data-edit="${l.id}">Modifier</button>
           <button class="btn small" data-nego="${l.id}">Négocier</button>
@@ -325,6 +326,11 @@ function brandsOf(l) {
 }
 $('oppFilter').onchange = renderOpps;
 $('oppTable').addEventListener('change', (e) => {
+  if (e.target.dataset.fav) {
+    const lf = db.lots.find((x) => x.id === e.target.dataset.fav);
+    if (lf) { lf.vintedFav = e.target.checked; save(); }
+    return;
+  }
   const id = e.target.dataset.status; if (!id) return;
   const l = db.lots.find((x) => x.id === id);
   if (e.target.value === 'achete' && l.status !== 'achete') { e.target.value = l.status; markBought(id); return; }
@@ -370,6 +376,121 @@ function markBought(id) {
   l.status = 'achete'; l.paid = paid; l.boughtAt = date;
   save(); toast(`${l.items.length} article(s) ajouté(s) au stock.`); renderOpps();
 }
+
+// ---------- Import des lots trouvés par Claude ----------
+const FAV_MIN_SCORE = 65;
+/** Recommandation « mettre en favori sur Vinted » : rentable au prix demandé ou atteignable en négociant. */
+function favAdvice(c) {
+  if (!c.n || c.maxPrice <= 0) return { ok: false, cls: 'bad', txt: 'Non : pas rentable' };
+  if (c.score < 50) return { ok: false, cls: 'bad', txt: 'Non : score trop faible' };
+  if (c.price <= c.maxPrice && c.score >= FAV_MIN_SCORE) return { ok: true, cls: 'good', txt: 'Oui : rentable au prix' };
+  if (c.maxPrice >= c.price * 0.7) return { ok: true, cls: 'warn', txt: 'Oui si négocié ≤ ' + eur(c.maxPrice) };
+  return { ok: false, cls: 'bad', txt: 'Non : écart de prix trop grand' };
+}
+function favCell(l, c) {
+  const a = favAdvice(c);
+  return `<span class="badge ${a.cls}">${esc(a.txt)}</span><br><label style="flex-direction:row;align-items:center;gap:4px;margin-top:4px"><input type="checkbox" data-fav="${l.id}" ${l.vintedFav ? 'checked' : ''}> ajouté</label>`;
+}
+
+const str = (v, max = 200) => String(v ?? '').trim().slice(0, max);
+/** Nettoie un lot venant de l'extérieur (JSON collé ou lien d'import). Accepte aussi les clés en français. */
+function normalizeLot(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const its = Array.isArray(raw.items ?? raw.articles) ? (raw.items ?? raw.articles).slice(0, 60) : [];
+  const items = its.map((it) => {
+    const mid = num(it.mid ?? it.moyen ?? it.prix ?? it.price);
+    return {
+      brand: str(it.brand ?? it.marque, 60), type: str(it.type ?? it.model ?? it.modele, 80), size: str(it.size ?? it.taille, 30),
+      low: num(it.low ?? it.bas) || +(mid * 0.75).toFixed(2), mid, high: num(it.high ?? it.haut) || +(mid * 1.25).toFixed(2),
+      risky: !!(it.risky ?? it.risque),
+    };
+  }).filter((it) => it.mid > 0);
+  const ship = raw.shipping ?? raw.livraison;
+  const lot = {
+    title: str(raw.title ?? raw.titre, 150), url: safeUrl(str(raw.url ?? raw.lien, 500)), seller: str(raw.seller ?? raw.vendeur, 60),
+    askPrice: num(raw.askPrice ?? raw.prix), shipping: ship === undefined || ship === null || ship === '' ? 5 : num(ship),
+    days: num(raw.days ?? raw.delai) || 30, demand: clamp(num(raw.demand ?? raw.demande) || 3, 1, 5),
+    quality: clamp(num(raw.quality ?? raw.qualite) || 3, 1, 5), notes: str(raw.notes, 2000), items,
+  };
+  if (!lot.title && items.length) lot.title = `Lot ${items.length} articles ${brandsOf(lot)}`;
+  if (!lot.title || !items.length || lot.askPrice <= 0) return null;
+  return lot;
+}
+function parseImport(text) {
+  const d = JSON.parse(text);
+  const arr = Array.isArray(d) ? d : Array.isArray(d.lots) ? d.lots : [d];
+  return arr.slice(0, 100);
+}
+const urlKey = (u) => (u || '').split('?')[0].replace(/\/$/, '').toLowerCase();
+
+let pending = [];
+function previewImport(rawList) {
+  pending = []; let bad = 0;
+  rawList.forEach((r) => { const l = normalizeLot(r); if (l) pending.push(l); else bad++; });
+  if (!pending.length) { $('importPreview').innerHTML = '<p class="hint neg" style="margin-top:10px">Aucun lot valide (il faut un prix demandé et au moins un article avec un prix de revente).</p>'; return; }
+  const rows = pending.map((l, i) => ({ l, i, c: calcLot(l) })).sort((a, b) => b.c.score - a.c.score);
+  $('importPreview').innerHTML = `
+    <h3>${pending.length} lot(s) vérifié(s)${bad ? ` · ${bad} ignoré(s) car incomplet(s)` : ''}</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th></th><th>Lot</th><th class="num">Score</th><th class="num">Demandé</th><th class="num">Prix max</th><th class="num">Net réaliste</th><th>Favori Vinted ?</th></tr></thead>
+      <tbody>${rows.map(({ l, i, c }) => {
+        const a = favAdvice(c);
+        const exists = l.url && db.lots.some((x) => urlKey(x.url) === urlKey(l.url));
+        return `<tr><td><input type="checkbox" data-pi="${i}" ${a.ok ? 'checked' : ''}></td>
+          <td>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.title)}</a>` : esc(l.title)}<br><small style="color:var(--muted)">${c.n} art. · ${esc(brandsOf(l))}${exists ? ' · déjà enregistré (sera mis à jour)' : ''}</small></td>
+          <td class="num score">${c.score}</td><td class="num">${eur(c.price)}</td>
+          <td class="num ${c.price <= c.maxPrice ? 'pos' : 'neg'}">${eur(c.maxPrice)}</td>
+          <td class="num ${signCls(c.real.net)}">${eur(c.real.net)}</td>
+          <td><span class="badge ${a.cls}">${esc(a.txt)}</span></td></tr>`;
+      }).join('')}</tbody></table></div>
+    <div class="row"><button class="btn primary" id="importSave">Ajouter les lots cochés aux opportunités</button><button class="btn" id="importCancel">Annuler</button></div>
+    <h3>Verdict (à recopier pour Claude)</h3>
+    <div class="out" id="importSummary">${esc(importSummary(rows))}</div>
+    <div class="row"><button class="btn small" data-copy="importSummary">Copier le verdict</button></div>`;
+}
+/** Résumé texte que Claude (dans Chrome) peut lire pour savoir quels lots mettre en favori. */
+function importSummary(rows) {
+  return 'VERDICT VINTED LOTS PRO\n' + rows.map(({ l, c }) => {
+    const a = favAdvice(c);
+    return `- ${a.ok ? 'FAVORI OUI' : 'FAVORI NON'} | score ${c.score}/100 | demandé ${eur(c.price)} | max ${eur(c.maxPrice)} | net réaliste ${eur(c.real.net)} | ${l.title}${l.url ? ' | ' + l.url : ''}`;
+  }).join('\n');
+}
+$('importCheck').onclick = () => {
+  try { previewImport(parseImport($('importText').value)); }
+  catch (e) { toast('JSON invalide : vérifie le texte collé.'); }
+};
+$('importPreview').addEventListener('click', (e) => {
+  if (e.target.dataset.copy) { copy($(e.target.dataset.copy).textContent); return; }
+  if (e.target.id === 'importCancel') { pending = []; $('importPreview').innerHTML = ''; return; }
+  if (e.target.id !== 'importSave') return;
+  let added = 0, updated = 0;
+  document.querySelectorAll('#importPreview [data-pi]').forEach((cb) => {
+    if (!cb.checked) return;
+    const l = pending[+cb.dataset.pi];
+    const ex = l.url ? db.lots.find((x) => urlKey(x.url) === urlKey(l.url)) : null;
+    if (ex) { Object.assign(ex, l, { updatedAt: today() }); updated++; }
+    else { db.lots.push({ ...l, id: uid(), status: 'etude', source: 'claude', createdAt: today(), history: [] }); added++; }
+  });
+  save(); pending = []; $('importText').value = ''; $('importPreview').innerHTML = '';
+  toast(`${added} lot(s) ajouté(s), ${updated} mis à jour.`); renderOpps();
+});
+/** Lien d'import : …/#import=<JSON encodé avec encodeURIComponent, ou en base64url> */
+function importFromHash() {
+  const m = location.hash.match(/^#import=([\s\S]+)$/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let list;
+  try { list = parseImport(decodeURIComponent(m[1])); }
+  catch (e) {
+    try {
+      const b = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      list = parseImport(new TextDecoder().decode(Uint8Array.from(atob(b), (ch) => ch.charCodeAt(0))));
+    } catch (e2) { toast("Lien d'import invalide."); return; }
+  }
+  showTab('opps'); previewImport(list);
+  $('importCard').scrollIntoView();
+}
+window.addEventListener('hashchange', importFromHash);
 
 // ---------- Négociation ----------
 function renderNegoSelect() {
@@ -797,7 +918,8 @@ $('resetAll').onclick = () => {
   $('sDate').value = today();
   resetLotForm();
   renderDashboard();
+  importFromHash();
 })();
 
 // Exposé pour les tests
-window.VLP = { calcLot, buyCost, itemProfit, get db() { return db; } };
+window.VLP = { calcLot, normalizeLot, favAdvice, buyCost, itemProfit, get db() { return db; } };
