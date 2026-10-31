@@ -21,6 +21,15 @@ Les données sont enregistrées dans le navigateur : pense à faire **Réglages 
 | **Recherche** | Génère des liens de recherche Vinted (plus récents d'abord, prix max) combinant marques de niche, « lot », tailles et **fautes d'orthographe courantes** pour repérer les annonces mal référencées. |
 | **Réglages** | Taux URSSAF (12,3 % par défaut, vente de marchandises en micro-entreprise), versement libératoire, protection acheteur, emballage, scénarios, ROI minimal, objectif et budget mensuels. |
 
+## Utiliser Claude pour chercher des lots
+
+Avec **Claude in Chrome** sur ton ordinateur, Claude peut parcourir Vinted, relever les lots et les envoyer à l'application pour vérification :
+
+1. Donne à Claude les consignes de [`CLAUDE_VINTED.md`](CLAUDE_VINTED.md).
+2. Claude ouvre un **lien d'import** (`…/Mon-projet-/#import=<JSON>`) ou colle le JSON dans *Opportunités → Importer des lots trouvés par Claude*.
+3. L'application calcule le score, le prix max et affiche `FAVORI OUI / NON` pour chaque lot.
+4. Claude te présente les lots `FAVORI OUI` et ne les met en favori sur Vinted qu'avec ton accord ; coche ensuite « ajouté » dans la colonne *Favori Vinted*.
+
 ## Méthode de calcul
 
 - Coût d'achat = prix + 0,70 € + 5 % (protection acheteur, modifiable) + livraison.

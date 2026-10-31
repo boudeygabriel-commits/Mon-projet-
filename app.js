@@ -303,7 +303,7 @@ function renderOpps() {
     <tbody>${list.map(({ l, c }, i) => {
       const url = safeUrl(l.url);
       return `<tr>
-        <td>${i + 1}${i < 10 && OPEN.includes(l.status) ? ' ⭐' : ''}</td>
+        <td>${i + 1}${i < 10 && OPEN.includes(l.status) && favAdvice(c).ok ? ' ⭐' : ''}</td>
         <td>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(l.title)}</a>` : esc(l.title)}<br><small style="color:var(--muted)">${c.n} art. · ${esc(brandsOf(l))}${l.seller ? ' · ' + esc(l.seller) : ''}</small></td>
         <td class="num score">${c.score}</td>
         <td class="num">${eur(c.price)}</td>
@@ -311,7 +311,7 @@ function renderOpps() {
         <td class="num ${signCls(c.real.net)}">${eur(c.real.net)}</td>
         <td class="num">${pct(c.real.roi)}</td>
         <td>${favCell(l, c)}</td>
-        <td><select data-status="${l.id}">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></td>
+        <td><select data-status="${l.id}" style="min-width:150px">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></td>
         <td style="white-space:nowrap">
           <button class="btn small" data-edit="${l.id}">Modifier</button>
           <button class="btn small" data-nego="${l.id}">Négocier</button>
