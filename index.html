@@ -91,6 +91,13 @@
   <section class="tab" id="tab-opps">
     <h2>Opportunités (favoris)</h2>
     <p class="hint">Tes lots enregistrés, classés par score. Les 10 premiers « à étudier / à négocier » sont tes meilleures cibles d'achat.</p>
+    <div class="card" id="importCard">
+      <h3 style="margin-top:0">Importer des lots trouvés par Claude</h3>
+      <p class="hint">Colle ici le JSON fourni par Claude (ou ouvre le lien d'import qu'il génère). Chaque lot est vérifié avant d'être ajouté : score, prix maximal et recommandation « favori Vinted ». Format : voir <code>CLAUDE_VINTED.md</code>.</p>
+      <textarea id="importText" placeholder='[{"title":"Lot 3 jeans Levi&apos;s 501","url":"https://www.vinted.fr/items/...","askPrice":35,"shipping":5,"items":[{"brand":"Levi&apos;s","type":"501","size":"W32 L32","low":18,"mid":25,"high":32}]}]'></textarea>
+      <div class="row"><button class="btn primary" id="importCheck">Vérifier la rentabilité</button></div>
+      <div id="importPreview"></div>
+    </div>
     <div class="row" style="margin-top:0;margin-bottom:10px">
       <label style="flex-direction:row;align-items:center;gap:6px">Statut
         <select id="oppFilter">
