@@ -1,0 +1,148 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f5f2;
+  --surface: #fcfcfb;
+  --surface-2: #efeee9;
+  --border: #dddcd5;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --muted: #7a7973;
+  --accent: #0b7d75;
+  --accent-ink: #ffffff;
+  --series-1: #2a78d6;
+  --good: #1f7a3a;
+  --warn: #9a6400;
+  --bad: #b3261e;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --border: #34332f;
+    --text: #f0efec;
+    --text-2: #c3c2b7;
+    --muted: #93928a;
+    --accent: #2bb3a8;
+    --accent-ink: #0b0b0b;
+    --series-1: #3987e5;
+    --good: #5cc27a;
+    --warn: #e0a83a;
+    --bad: #ef7a72;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121211;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+  --border: #34332f;
+  --text: #f0efec;
+  --text-2: #c3c2b7;
+  --muted: #93928a;
+  --accent: #2bb3a8;
+  --accent-ink: #0b0b0b;
+  --series-1: #3987e5;
+  --good: #5cc27a;
+  --warn: #e0a83a;
+  --bad: #ef7a72;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; max-width: 1100px; margin: 0 auto; }
+.top h1 { font-size: 17px; margin: 0; flex: 1; }
+nav { display: flex; gap: 4px; overflow-x: auto; padding: 0 16px 8px; max-width: 1100px; margin: 0 auto; }
+nav button {
+  background: none; border: 1px solid transparent; color: var(--text-2);
+  padding: 6px 10px; border-radius: 999px; white-space: nowrap; cursor: pointer; font: inherit; font-size: 14px;
+}
+nav button.active { background: var(--surface-2); color: var(--text); border-color: var(--border); font-weight: 600; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+section.tab { display: none; }
+section.tab.active { display: block; }
+h2 { font-size: 20px; margin: 4px 0 12px; }
+h3 { font-size: 16px; margin: 18px 0 8px; }
+p.hint { color: var(--text-2); margin: 0 0 12px; font-size: 14px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+.grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.tile .label { color: var(--text-2); font-size: 13px; }
+.tile .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .sub { color: var(--muted); font-size: 12px; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-2); }
+input, select, textarea {
+  font: inherit; font-size: 15px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px; width: 100%; min-width: 0;
+}
+textarea { min-height: 90px; resize: vertical; }
+input[type="checkbox"] { width: auto; }
+button.btn {
+  font: inherit; font-size: 14px; cursor: pointer; border-radius: 8px; padding: 8px 12px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+}
+button.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.btn.danger { color: var(--bad); }
+button.btn.small { padding: 4px 8px; font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+th { color: var(--text-2); font-weight: 600; font-size: 13px; white-space: nowrap; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.items-table input { padding: 5px 6px; font-size: 14px; }
+
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--surface-2); white-space: nowrap; }
+.badge.good { color: var(--good); }
+.badge.warn { color: var(--warn); }
+.badge.bad { color: var(--bad); }
+.score { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.meter { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.meter > div { height: 100%; background: var(--series-1); border-radius: 999px; }
+
+.out { white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 14px; }
+ul.actions { margin: 0; padding-left: 18px; }
+ul.actions li { margin: 4px 0; }
+.links a { color: var(--series-1); word-break: break-all; }
+a { color: var(--series-1); }
+
+.chart { position: relative; }
+.chart svg { width: 100%; height: 200px; display: block; }
+.chart .axis { fill: var(--muted); font-size: 11px; }
+.chart .grid-line { stroke: var(--border); stroke-width: 1; }
+.chart .bar { fill: var(--series-1); }
+.chart .bar:hover { opacity: .8; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); display: none; white-space: nowrap;
+}
+.toast {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+@media (max-width: 600px) {
+  .tile .value { font-size: 19px; }
+}
+.tile .badge { white-space: normal; }
