@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vinted Lots Pro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Vinted Lots Pro</h1>
+    <button class="btn small" id="themeBtn" title="Changer de thème">Thème</button>
+  </div>
+  <nav id="nav">
+    <button data-tab="dashboard" class="active">Tableau de bord</button>
+    <button data-tab="analyse">Analyser un lot</button>
+    <button data-tab="opps">Opportunités</button>
+    <button data-tab="nego">Négociation</button>
+    <button data-tab="stock">Stock &amp; ventes</button>
+    <button data-tab="annonce">Annonces</button>
+    <button data-tab="recherche">Recherche</button>
+    <button data-tab="reglages">Réglages</button>
+  </nav>
+</header>
+
+<main>
+  <!-- TABLEAU DE BORD -->
+  <section class="tab active" id="tab-dashboard">
+    <h2>Tableau de bord</h2>
+    <div class="tiles" id="dashTiles"></div>
+    <div class="card">
+      <h3 style="margin-top:0">Objectif du mois</h3>
+      <div id="goalBox"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Bénéfice net par mois (6 derniers mois)</h3>
+      <div class="chart" id="monthChart"></div>
+      <details><summary>Voir le tableau</summary><div class="table-wrap" id="monthTable"></div></details>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Prochaines actions recommandées</h3>
+      <ul class="actions" id="nextActions"></ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Performance par marque</h3>
+      <div class="table-wrap" id="perfBrand"></div>
+      <h3>Performance par taille</h3>
+      <div class="table-wrap" id="perfSize"></div>
+    </div>
+  </section>
+
+  <!-- ANALYSE -->
+  <section class="tab" id="tab-analyse">
+    <h2>Analyser un lot</h2>
+    <p class="hint">Saisis une annonce que tu as trouvée sur Vinted et tes estimations de revente (vérifiées sur les articles <b>vendus</b> similaires). L'outil calcule la rentabilité, le score /100 et le prix maximal à ne pas dépasser.</p>
+    <div class="card">
+      <div class="grid">
+        <label>Titre / description courte<input id="lTitle" placeholder="Lot 4 jeans Levi's 501 W32"></label>
+        <label>Lien de l'annonce<input id="lUrl" placeholder="https://www.vinted.fr/items/..."></label>
+        <label>Vendeur<input id="lSeller" placeholder="pseudo"></label>
+        <label>Prix demandé (€)<input id="lAsk" type="number" step="0.5" min="0"></label>
+        <label>Livraison (€)<input id="lShip" type="number" step="0.1" min="0" value="5"></label>
+        <label>Délai de revente estimé (jours)<input id="lDays" type="number" min="1" value="30"></label>
+        <label>Demande marque/taille (1-5)<input id="lDemand" type="number" min="1" max="5" value="3"></label>
+        <label>Qualité / authenticité (1-5)<input id="lQuality" type="number" min="1" max="5" value="3"></label>
+      </div>
+      <h3>Articles du lot</h3>
+      <p class="hint">Prix bas / moyen / haut = fourchette de prix de vente constatée. Coche « risqué » si l'article a un défaut, une taille peu demandée ou un doute d'authenticité.</p>
+      <div class="table-wrap">
+        <table class="items-table">
+          <thead><tr><th>Marque</th><th>Type / modèle</th><th>Taille</th><th class="num">Bas €</th><th class="num">Moyen €</th><th class="num">Haut €</th><th>Risqué</th><th></th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <div class="row">
+        <button class="btn" id="addItem">+ Ajouter un article</button>
+        <label style="flex-direction:row;align-items:center;gap:6px">Ajouter <input id="bulkN" type="number" min="1" max="30" value="3" style="width:64px"> articles identiques au dernier</label>
+        <button class="btn" id="bulkAdd">Dupliquer</button>
+      </div>
+      <label style="margin-top:10px">Notes<textarea id="lNotes" placeholder="État, mesures, questions à poser au vendeur…"></textarea></label>
+    </div>
+    <div id="analysisOut"></div>
+    <div class="row">
+      <button class="btn primary" id="saveLot">Enregistrer dans les opportunités</button>
+      <button class="btn" id="resetLot">Nouveau lot</button>
+    </div>
+  </section>
+
+  <!-- OPPORTUNITÉS -->
+  <section class="tab" id="tab-opps">
+    <h2>Opportunités (favoris)</h2>
+    <p class="hint">Tes lots enregistrés, classés par score. Les 10 premiers « à étudier / à négocier » sont tes meilleures cibles d'achat.</p>
+    <div class="row" style="margin-top:0;margin-bottom:10px">
+      <label style="flex-direction:row;align-items:center;gap:6px">Statut
+        <select id="oppFilter">
+          <option value="open">Ouverts (à étudier / négociation / offre)</option>
+          <option value="all">Tous</option>
+          <option value="achete">Achetés</option>
+          <option value="abandonne">Abandonnés</option>
+        </select>
+      </label>
+      <button class="btn small" id="dedupe">Signaler les doublons</button>
+    </div>
+    <div class="card table-wrap" id="oppTable"></div>
+  </section>
+
+  <!-- NÉGOCIATION -->
+  <section class="tab" id="tab-nego">
+    <h2>Négociation</h2>
+    <p class="hint">Choisis un lot : l'outil propose une offre d'ouverture, une cible et le prix maximal, puis prépare les messages. Rien n'est envoyé automatiquement : tu copies et envoies toi-même.</p>
+    <div class="card">
+      <div class="grid">
+        <label>Lot<select id="negoLot"></select></label>
+        <label>Ton prénom (signature)<input id="negoName" placeholder="Gabriel"></label>
+      </div>
+      <div id="negoOut"></div>
+    </div>
+  </section>
+
+  <!-- STOCK -->
+  <section class="tab" id="tab-stock">
+    <h2>Stock &amp; ventes</h2>
+    <div class="card">
+      <h3 style="margin-top:0">Ajouter un article au stock</h3>
+      <div class="grid">
+        <label>Marque<input id="sBrand"></label>
+        <label>Type / modèle<input id="sType"></label>
+        <label>Taille<input id="sSize"></label>
+        <label>Coût d'achat (€)<input id="sCost" type="number" step="0.01" min="0"></label>
+        <label>Date d'achat<input id="sDate" type="date"></label>
+        <label>Prix affiché (€)<input id="sList" type="number" step="0.5" min="0"></label>
+      </div>
+      <div class="row"><button class="btn primary" id="addStock">Ajouter</button></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <label style="flex-direction:row;align-items:center;gap:6px">Afficher
+        <select id="stockFilter">
+          <option value="stock">En stock</option>
+          <option value="sold">Vendus</option>
+          <option value="all">Tous</option>
+        </select>
+      </label>
+    </div>
+    <div class="card table-wrap" id="stockTable"></div>
+  </section>
+
+  <!-- ANNONCES -->
+  <section class="tab" id="tab-annonce">
+    <h2>Générateur d'annonces</h2>
+    <p class="hint">Remplis ce que tu sais : l'outil compose un titre clair (marque + modèle + taille + coupe) et une description complète avec mesures et mots-clés.</p>
+    <div class="card">
+      <div class="grid">
+        <label>Marque<input id="aBrand" placeholder="Levi's"></label>
+        <label>Modèle / type<input id="aModel" placeholder="501 jean"></label>
+        <label>Coupe / style<input id="aFit" placeholder="straight, baggy, vintage…"></label>
+        <label>Taille (ex. W32 L32 / L)<input id="aSize"></label>
+        <label>Couleur<input id="aColor" placeholder="bleu délavé"></label>
+        <label>Matière<input id="aMat" placeholder="100% coton"></label>
+        <label>État
+          <select id="aCond">
+            <option>Neuf avec étiquette</option>
+            <option>Neuf sans étiquette</option>
+            <option selected>Très bon état</option>
+            <option>Bon état</option>
+            <option>Satisfaisant</option>
+          </select>
+        </label>
+        <label>Époque / origine<input id="aEra" placeholder="années 90, made in USA…"></label>
+        <label>Mesures à plat<input id="aMeas" placeholder="Tour de taille 41 cm, entrejambe 80 cm"></label>
+        <label>Défauts éventuels<input id="aDefects" placeholder="aucun / petite tache au bas"></label>
+      </div>
+      <div class="row"><button class="btn primary" id="genAnnonce">Générer</button></div>
+      <div id="annonceOut"></div>
+    </div>
+  </section>
+
+  <!-- RECHERCHE -->
+  <section class="tab" id="tab-recherche">
+    <h2>Recherches Vinted ciblées</h2>
+    <p class="hint">Génère des liens de recherche Vinted (triés par plus récents) qui combinent marques, mots-clés « lot », tailles et <b>fautes d'orthographe courantes</b> pour trouver les annonces mal référencées. Tu ouvres les liens toi-même : aucune donnée n'est aspirée.</p>
+    <div class="card">
+      <h3 style="margin-top:0">Marques</h3>
+      <div id="brandChecks" class="grid"></div>
+      <div class="grid" style="margin-top:10px">
+        <label>Mots-clés lot
+          <select id="rLotKw">
+            <option value="lot">lot</option>
+            <option value="lot|lots|ensemble|vide dressing">lot + variantes</option>
+            <option value="">aucun (articles seuls)</option>
+          </select>
+        </label>
+        <label>Taille / précision (optionnel)<input id="rSize" placeholder="W32, XL, baggy…"></label>
+        <label>Prix max (€)<input id="rMax" type="number" min="0" placeholder="40"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px;margin-top:22px"><input type="checkbox" id="rTypos" checked> Inclure les fautes d'orthographe</label>
+      </div>
+      <div class="row"><button class="btn primary" id="genSearch">Générer les liens</button></div>
+      <div id="searchOut" class="links"></div>
+    </div>
+  </section>
+
+  <!-- RÉGLAGES -->
+  <section class="tab" id="tab-reglages">
+    <h2>Réglages</h2>
+    <div class="card">
+      <h3 style="margin-top:0">Frais et charges</h3>
+      <p class="hint">Vérifie ces taux sur urssaf.fr et vinted.fr : ils changent. Par défaut : micro-entreprise « vente de marchandises » (12,3 % du CA) et protection acheteur Vinted (0,70 € + 5 %).</p>
+      <div class="grid">
+        <label>Cotisations URSSAF (% du CA)<input id="cfgUrssaf" type="number" step="0.1"></label>
+        <label>Versement libératoire IR (% du CA)<input id="cfgVl" type="number" step="0.1"></label>
+        <label>Protection acheteur fixe (€)<input id="cfgProtFix" type="number" step="0.05"></label>
+        <label>Protection acheteur (%)<input id="cfgProtPct" type="number" step="0.1"></label>
+        <label>Emballage par vente (€)<input id="cfgPack" type="number" step="0.05"></label>
+        <label>Frais vendeur (% du prix de vente)<input id="cfgSellFee" type="number" step="0.1"></label>
+      </div>
+      <h3>Scénarios (taux d'articles vendus)</h3>
+      <div class="grid">
+        <label>Pessimiste (%) – prix bas<input id="cfgPess" type="number"></label>
+        <label>Réaliste (%) – prix moyen<input id="cfgReal" type="number"></label>
+        <label>Optimiste (%) – prix haut<input id="cfgOpt" type="number"></label>
+      </div>
+      <h3>Règles d'achat</h3>
+      <div class="grid">
+        <label>ROI net minimal visé (%)<input id="cfgRoi" type="number"></label>
+        <label>Bénéfice net min. par article (€)<input id="cfgMinItem" type="number" step="0.5"></label>
+        <label>Objectif net mensuel (€)<input id="cfgGoal" type="number"></label>
+        <label>Budget d'achat mensuel max (€)<input id="cfgBudget" type="number"></label>
+        <label>Stock dormant après (jours)<input id="cfgDormant" type="number"></label>
+      </div>
+      <div class="row"><button class="btn primary" id="saveCfg">Enregistrer les réglages</button></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Sauvegarde</h3>
+      <p class="hint">Les données restent dans ce navigateur. Exporte régulièrement un fichier de sauvegarde.</p>
+      <div class="row">
+        <button class="btn" id="exportJson">Exporter (JSON)</button>
+        <label class="btn" style="flex-direction:row;cursor:pointer">Importer (JSON)<input type="file" id="importJson" accept=".json,application/json" hidden></label>
+        <button class="btn" id="exportCsv">Exporter stock &amp; ventes (CSV)</button>
+        <button class="btn danger" id="resetAll">Tout effacer</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
