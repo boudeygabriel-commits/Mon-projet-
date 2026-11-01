@@ -61,3 +61,16 @@ Tu m'aides à trouver des lots de vêtements rentables sur Vinted et à les fair
 - **N'achète rien et n'envoie aucun message ni aucune offre** sans mon accord explicite. L'onglet *Négociation* prépare les messages, et c'est moi qui valide.
 - Ne mets en favori que des lots `FAVORI OUI`, et seulement après mon accord.
 - Navigue à un rythme humain (pas de dizaines de pages à la seconde) et respecte les conditions d'utilisation de Vinted.
+
+## Lots repérés par le bot d'alertes
+
+Le bot (dossier [`bot/`](bot/README.md)) publie les lots qu'il repère en temps réel dans
+https://github.com/boudeygabriel-commits/Mon-projet-/blob/bot-alertes/alertes/annonces.json
+(champs : `url`, `titre`, `prix`, `marque`, `taille`, `etat`, `vendeur`, `pieces`, `vu_a`, et `statut_bot` en tête de fichier).
+
+- Au début de chaque passage, lis ce fichier et analyse **en priorité** les annonces vues depuis le passage précédent
+  (`vu_a` dans les dernières 24 h). Ouvre chaque annonce sur Vinted : ignore celles vendues, réservées ou déjà en favori.
+- Ces annonces sont seulement pré-filtrées : applique-leur les mêmes exclusions, le même calcul de rentabilité
+  et les mêmes règles de favori et d'offre que pour tes propres recherches.
+- Si le fichier est introuvable, vide, ou si `maj` date de plus de 24 h, ou si `statut_bot` indique un blocage,
+  signale-le dans le résumé et continue normalement.
